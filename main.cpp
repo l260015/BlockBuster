@@ -1,97 +1,140 @@
 #include <SFML/Graphics.hpp>
 #include<fstream>
 #include<iostream>
+#include<time.h>
+#include<cstdlib>
 using namespace std;
 
 int bricks[8][10];
+int paddleX = 250;
 
-bool loadLevel()
+void movePaddle()
 {
-	ifstream file("level.txt");
-	if (!file)
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) ||
+		sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
 	{
-		cout << "Failed to open level file." << endl;
-		return false;
-	}
+		paddleX -= 8;
+		if (paddleX < 0)
+			paddleX = 0;
 
+	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) ||
+		sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+	{
+		paddleX += 8;
+		if (paddleX > 500)
+			paddleX = 500;
+	}
+}
+
+void drawPaddle(sf::RenderWindow& window)
+{
+	sf::RectangleShape paddle({ 100.f, 14.f });
+	paddle.setFillColor(sf::Color::Cyan);
+	paddle.setPosition({ static_cast<float>(paddleX), 650.f });
+	window.draw(paddle);
+}
+
+void starter() {
+	ofstream out("level.txt");
+	int rows = 8, cols = 10;
+	int temp;
+	srand(time(0));
+
+	if (out.is_open()) {
+		out << rows << " " << cols << endl;
+
+		for (int i = 0; i < rows; i++) {
+			for (int j = 0; j < cols; j++) {
+				temp = (rand() % 4);
+				out << temp << " ";
+			}
+			out << endl;
+		}
+
+
+		out.close();
+	}
+	else {
+		cout << "Error opening file.\n";
+	}
+}
+
+void loadlevel()
+{
 	int rows, cols;
-	file >> rows >> cols;
-
-	for (int i = 0; i < 8; ++i)
-	{
-		for (int j = 0; j < 10; ++j)
-		{
-			file >> bricks[i][j];
-		}
+	ifstream fin("level.txt");
+	if (!fin.is_open()) {
+		cout << "Error opening file";
+		return;
 	}
 
-	for (int i = 0; i < 8; ++i)
-	{
-		for (int j = 0; j < 10; ++j)
-		{
-			cout << bricks[i][j] << " ";
-		}
-		cout << endl;
-	}
+	fin >> rows >> cols;
 
-	file.close();
-	return true;
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			fin >> bricks[i][j];
+		}
+	}
 }
 
 void drawBricks(sf::RenderWindow& window)
 {
-	sf::Color colors[4] = { sf::Color(25,25,45), sf::Color::Green,
-							sf::Color::Yellow, sf::Color::Red };
-	sf::RectangleShape brick({ 58.f, 23.f });
-	for (int i = 0; i < 8; ++i)
+	const float BRICK_W = 60.f, BRICK_H = 25.f; // one brick is 60 x 25 pixels
+	const float BRICKS_Y = 100.f; // the bricks start at y = 100
+	sf::Color colors[4] = { sf::Color(25, 25, 45), // 0: no brick
+	sf::Color::Green, // 1: one hit left
+	sf::Color::Yellow, // 2: two hits left
+	sf::Color::Red }; // 3: three hits left
+
+	sf::RectangleShape brick({ BRICK_W - 2, BRICK_H - 2 }); // smaller, so a gap shows
+	for (int r = 0; r < 8; ++r)
 	{
-		for (int j = 0; j < 10; ++j)
+		for (int c = 0; c < 10; ++c)
 		{
-			if (bricks[i][j] > 0)
+			if (bricks[r][c] > 0)
 			{
-				brick.setPosition({ static_cast<float>(j * 60 + 1), static_cast<float>(i * 25 + 100) });
-				brick.setFillColor(colors[bricks[i][j]]);
+				brick.setFillColor(colors[bricks[r][c]]);
+				brick.setPosition({ c * BRICK_W + 1, BRICKS_Y + r * BRICK_H + 1 });
 				window.draw(brick);
 			}
 		}
 	}
 }
+void handleInput(sf::RenderWindow& window) {
 
-void handleInput(sf::RenderWindow& window)
-{
-    while (const std::optional event = window.pollEvent())
-    {
-        if (event->is<sf::Event::Closed>())
-            window.close();
-    }
+	while (const std::optional event = window.pollEvent())
+	{
+		if (event->is<sf::Event::Closed>())
+			window.close();
+	}
 }
 
 void updateGame()
 {
+	movePaddle();
 }
 
 void drawGame(sf::RenderWindow& window)
 {
-    window.clear();
+	window.clear();
 	drawBricks(window);
-    window.display();
+	drawPaddle(window);
+	window.display();
 }
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({ 600, 700 }), "Block Buster");
-    window.setFramerateLimit(60);
+	sf::RenderWindow window(sf::VideoMode({ 600, 700 }), "Block Buster");
+	window.setFramerateLimit(60);
+	starter();
+	loadlevel();
 
-	int result = loadLevel();
-	if (!result)
+
+	while (window.isOpen())
 	{
-		return 0;
+		handleInput(window);
+		updateGame();
+		drawGame(window);
 	}
-
-    while (window.isOpen())
-    {
-        handleInput(window);
-        updateGame();
-        drawGame(window);
-    }
 }

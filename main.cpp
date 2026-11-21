@@ -38,6 +38,25 @@ bool loadLevel()
 	return true;
 }
 
+void drawBricks(sf::RenderWindow& window)
+{
+	sf::Color colors[4] = { sf::Color(25,25,45), sf::Color::Green,
+							sf::Color::Yellow, sf::Color::Red };
+	sf::RectangleShape brick({ 58.f, 23.f });
+	for (int i = 0; i < 8; ++i)
+	{
+		for (int j = 0; j < 10; ++j)
+		{
+			if (bricks[i][j] > 0)
+			{
+				brick.setPosition({ static_cast<float>(j * 60 + 1), static_cast<float>(i * 25 + 100) });
+				brick.setFillColor(colors[bricks[i][j]]);
+				window.draw(brick);
+			}
+		}
+	}
+}
+
 void handleInput(sf::RenderWindow& window)
 {
     while (const std::optional event = window.pollEvent())
@@ -54,6 +73,7 @@ void updateGame()
 void drawGame(sf::RenderWindow& window)
 {
     window.clear();
+	drawBricks(window);
     window.display();
 }
 
